@@ -24,6 +24,7 @@ setup(
   keywords='bioinformatics',
   packages=['goodneighbors'],
   install_requires=['pandas>=0.23.0',
+                    'sklearn',
                     'numpy',
                     'scipy',
                     'h5py',
