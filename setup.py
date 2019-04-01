@@ -8,7 +8,7 @@ with open(path.join(this_folder,'README.md'),encoding='utf-8') as inf:
 
 setup(
   name='goodneighbors',
-  version='0.1.0',
+  version='1.0.0',
   description='Transform cell data to neighborhood data',
   long_description=long_description,
   url='https://github.com/jason-weirather/good-neighbors',
@@ -28,5 +28,6 @@ setup(
                     'numpy',
                     'scipy',
                     'h5py',
-                    'tables'],
+                    'tables',
+                    'MulticoreTSNE'],
 )
