@@ -28,6 +28,8 @@ setup(
                     'numpy',
                     'scipy',
                     'h5py',
-                    'tables',
-                    'MulticoreTSNE'],
+                    'tables'],
+  extras_require={
+                    'multicore':['MulticoreTSNE']
+  }
 )

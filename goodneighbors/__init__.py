@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 from sklearn.cluster import KMeans
 from goodneighbors.plots import plot_counts_per_radius, plot_kmeans_evaluation, plot_cluster_composition
-from MulticoreTSNE import MulticoreTSNE as mTSNE
 from sklearn.manifold import TSNE
 from scipy.cluster.hierarchy import leaves_list
 from scipy.cluster.hierarchy import linkage
@@ -72,6 +71,7 @@ class GoodNeighbors(object):
         if self.verbose: sys.stderr.write("executing TSNE decomposition on "+str(dsdata.shape[0])+" cells\n")
         tsne = None
         if multicore: 
+            from MulticoreTSNE import MulticoreTSNE as mTSNE
             if self.verbose: sys.stderr.write("Using MulticoreTSNE\n")
             tsne = mTSNE(n_jobs=n_jobs,**kwargs).fit_transform(dsdata)
         else:
