@@ -423,7 +423,7 @@ class GoodNeighbors(object):
                             mode='r+',format='table',complib='zlib',complevel=9)
         return
 
-    def calculate_fractions(self,scaler=None):
+    def calculate_fractions(self,scaler=None,fillna=0):
         # i.e. from sklearn.preprocessing import scale
         if self.counts is None: raise ValueError("Set counts before calculating fractions")
         if scaler != self.scaler: 
@@ -438,6 +438,8 @@ class GoodNeighbors(object):
         if scaler is not None:
             cnts = pd.DataFrame(scaler.fit_transform(cnts),columns=cnts.columns)
         cnts.index.name = 'db_id'
+        if fillna is not None:
+            cnts = cnts.fillna(fillna)
         self.fractions = cnts
     
         
