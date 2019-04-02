@@ -7,6 +7,7 @@ from sklearn.manifold import TSNE
 from scipy.cluster.hierarchy import leaves_list
 from scipy.cluster.hierarchy import linkage
 from sklearn.preprocessing import scale
+from scipy.spatial.distance import cdist
 
 class GoodNeighbors(object):
     """
@@ -184,35 +185,65 @@ class GoodNeighbors(object):
             return # we've already got a value 
         self.radius = radius
         if self.verbose: sys.stderr.write("Max distance is "+str(radius)+"\n")
-        one = self.cells.copy().reset_index()
+        full = self.cells.copy().reset_index()
         phenotypes = pd.DataFrame({'phenotype_label':self.cells['phenotype_label'].unique()})
         phenotypes['_key'] = 1
         total = pd.DataFrame({'db_id':self.cells.index.tolist()})
         total['_key'] = 1
         total = total.merge(phenotypes,on='_key')
         ## Execute distance measure on a per-image basis
-        images = one[self.groupby].drop_duplicates().copy()
-        dist = []
+        images = full[self.groupby].drop_duplicates().copy()
+        collect = []
         for i,r in images.iterrows():
             idf = pd.DataFrame(r).T
             #print(idf)
+            if self.verbose: sys.stderr.write("================\n")
             if self.verbose: sys.stderr.write("Calculating distances for "+str(r)+"\n")
-            sub = one.merge(idf,on=self.groupby)
-            subdist = sub.merge(sub.rename(columns={'x':'n_x','y':'n_y',
-                                                 'phenotype_label':'n_phenotype_label',
-                                                 'db_id':'n_db_id'}),on=self.groupby)
-            subdist = subdist.loc[subdist['db_id']!=subdist['n_db_id']]
-            xdist = subdist['x'].subtract(subdist['n_x'])
-            ydist = subdist['y'].subtract(subdist['n_y'])
-            subdist['distance'] = np.sqrt(xdist.multiply(xdist).add(ydist.multiply(ydist)))
-            subdist = subdist[subdist['distance']<radius]
-            subdist = subdist.groupby(['db_id','n_phenotype_label']).count()[['n_db_id']].\
-                rename(columns={'n_db_id':'count'}).\
-                reset_index().rename(columns={'n_phenotype_label':'phenotype_label'}).\
-                pivot(columns='phenotype_label',index='db_id',values='count').\
-                fillna(0).astype(int)
-            dist.append(subdist)
-        self.counts = pd.concat(dist)
+            one = full.merge(idf,on=self.groupby).set_index('db_id')
+
+            # get all the distances
+            coords = list(zip(one['x'],one['y']))
+            dist = cdist(coords,coords)
+            dist = pd.DataFrame(dist,columns=one.index,index=one.index)
+
+            # get the distances we are interested in
+            s = one.apply(lambda x: 
+                dist.columns[dist.loc[x.name]<radius].tolist()
+            ,1)
+            s = pd.DataFrame(s).apply(lambda x: pd.Series(*x),1).stack().reset_index().\
+                drop(columns='level_1').\
+                rename(columns={'level_0':'db_id',0:'n_db_id'}).dropna()
+            s = s.astype(int)
+            s = s.loc[s['db_id']!=s['n_db_id']].set_index('n_db_id') # going to join on this neighbor id
+
+            # Shape the counts into a matrix
+            cnts = s.merge(one[['phenotype_label']],left_index=True,right_index=True).reset_index().groupby(['db_id','phenotype_label']).count().\
+                reset_index().sort_values(['db_id','phenotype_label'])
+            ids = pd.DataFrame({'db_id':one.index.tolist()})
+            ids['_key'] = 1
+            cnts = ids.merge(phenotypes,on='_key').drop(columns=['_key']).merge(cnts,on=['db_id','phenotype_label'],how='left').fillna(0)
+            cnts['index'] = cnts['index'].astype(int)
+            cnts = cnts.pivot(columns='phenotype_label',index='db_id',values='index')
+
+            #subdist['_key'] = 1
+            #if self.verbose: sys.stderr.write("merging to self\n")
+            #subdist = subdist.merge(subdist.rename(columns={'x':'n_x','y':'n_y',
+            #                                     'phenotype_label':'n_phenotype_label',
+            #                                     'db_id':'n_db_id'}),on='_key').drop(columns=['_key'])
+            #if self.verbose: sys.stderr.write("we have "+str(subdist.shape[0])+" to check.\n")
+            #subdist = subdist.loc[subdist['db_id']!=subdist['n_db_id']]
+            #xdist = subdist['x'].subtract(subdist['n_x'])
+            #ydist = subdist['y'].subtract(subdist['n_y'])
+            #subdist['distance'] = np.sqrt(xdist.multiply(xdist).add(ydist.multiply(ydist)))
+            #subdist = subdist.loc[subdist['distance']<radius].copy()
+            #if self.verbose: sys.stderr.write("got cut down version with "+str(subdist.shape[0])+"\n")
+            #subdist = subdist.groupby(['db_id','n_phenotype_label']).count()[['n_db_id']].\
+            #    rename(columns={'n_db_id':'count'}).\
+            #    reset_index().rename(columns={'n_phenotype_label':'phenotype_label'}).\
+            #    pivot(columns='phenotype_label',index='db_id',values='count').\
+            #    fillna(0).astype(int).copy()
+            collect.append(cnts)
+        self.counts = pd.concat(collect)
         return #self._counts
 
     def get_counts_per_radius(self,min_radius=0,max_radius=150,step_radius=2):
