@@ -28,7 +28,8 @@ setup(
                     'numpy',
                     'scipy',
                     'h5py',
-                    'tables'],
+                    'tables',
+                    'plotnine'],
   extras_require={
                     'multicore':['MulticoreTSNE']
   }
