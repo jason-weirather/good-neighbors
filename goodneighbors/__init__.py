@@ -25,10 +25,13 @@ class GoodNeighbors(object):
         self.h5path = h5path
         self.mode = mode
         self.location = location
-        self._distance = None
+        self._cells = None
         self.verbose = verbose
         if mode in ['w','r+','a']:
             f = h5py.File(self.h5path,mode)
+            if mode in ['r+','a'] and location+'/cells' in f:
+                f.close()
+                return  # we've already made this                
             if location != '': f.create_group(location+'/cells')
             dset = f.create_dataset('/meta', (100,), dtype=h5py.special_dtype(vlen=str))
             dset.attrs['microns_per_pixel'] = microns_per_pixel
@@ -65,10 +68,24 @@ class GoodNeighbors(object):
     #@property
     #def tsne(self):
     #    return pd.read_hdf(self.h5path,self.location+'/cells/tsne')
-    def calculate_TSNE(self,n_jobs=1,sample=5000,multicore=False,**kwargs):
-        if self.cells.shape[0] < sample: sample = self.cells.shape[0]
+    def calculate_TSNE(self,indecies=None,sample=5000,n_jobs=1,multicore=False,**kwargs):
+        """
+        Calculate the TSNE and store it in the h5 object
+
+        Args:
+            indecies (list): select a subset based on indecies
+            sample (int): number of cells to downsample to if None use them all
+            n_jobs (int): number of cpus to use (if multicore is True)
+            multicore (bool): use the MultiCoreTSNE package
+            **kwargs: pass any other arguments to TSNE
+        """
         if not self.mode in ['w','r+','a']: raise ValueError('cant write for readonly')
-        dsdata = self.fractions.sample(n=sample)
+        dsdata = self.fractions.copy()
+        if indecies is not None:
+            dsdata = dsdata.loc[indecies]
+        if sample is not None:
+            if dsdata.shape[0] < sample: sample = dsdata.shape[0]
+            dsdata = dsdata.sample(n=sample)
         if self.verbose: sys.stderr.write("executing TSNE decomposition on "+str(dsdata.shape[0])+" cells\n")
         tsne = None
         if multicore: 
