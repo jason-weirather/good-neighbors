@@ -31,6 +31,7 @@ setup(
                     'tables',
                     'plotnine'],
   extras_require={
-                    'multicore':['MulticoreTSNE']
+                    'multicore':['MulticoreTSNE'],
+                    'test':['pythologist-test-images']
   }
 )
