@@ -125,6 +125,7 @@ class GoodNeighbors(object):
 
         clusters['cluster_name'] = clusters['cluster_id'].astype(str)
         self.clusters= clusters
+        return km, d
         #clusters.to_hdf(self.h5path,self.location+'/cells/clusters',
         #             mode='r+',format='table',complib='zlib',complevel=9)
 
@@ -136,7 +137,6 @@ class GoodNeighbors(object):
         clusters = pd.DataFrame({'cluster_id':cids},index=fmat.index).reset_index()
         km, clusters
         return  km, clusters
-
 
     def get_kmeans_evaluation(self,kmin=2,kmax=20):
         kdata = []
