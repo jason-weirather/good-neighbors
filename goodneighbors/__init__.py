@@ -132,7 +132,7 @@ class GoodNeighbors(object):
 
     def _cluster_kmeans(self,k):
         fmat = self.fractions
-        km = KMeans(n_clusters=k).fit(fmat)
+        km = KMeans(n_clusters=k,random_state=10).fit(fmat)
         cids = km.labels_
         clusters = pd.DataFrame({'cluster_id':cids},index=fmat.index).reset_index()
         km, clusters
