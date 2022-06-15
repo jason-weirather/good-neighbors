@@ -189,7 +189,7 @@ class GoodNeighbors(object):
     #    #fracs['radius'] = radius_pixels
     #    return 
 
-    def calculate_neighbor_counts(self,radius,units='microns'):
+    def calculate_neighbor_counts(self,radius,units='microns', include_self=True):
         """
         count the neighbors at the radius
         """
@@ -231,7 +231,10 @@ class GoodNeighbors(object):
                 drop(columns='level_1').\
                 rename(columns={'level_0':'db_id',0:'n_db_id'}).dropna()
             s = s.astype(int)
-            s = s.loc[s['db_id']!=s['n_db_id']].set_index('n_db_id') # going to join on this neighbor id
+            if include_self == True:
+                s = s.set_index('n_db_id') # going to join on this neighbor id
+            else:
+                s = s.loc[s['db_id']!=s['n_db_id']].set_index('n_db_id') # going to join on this neighbor id
 
             # Shape the counts into a matrix
             cnts = s.merge(one[['phenotype_label']],left_index=True,right_index=True).reset_index().groupby(['db_id','phenotype_label']).count().\
