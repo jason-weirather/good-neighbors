@@ -554,13 +554,13 @@ class GoodNeighbors(object):
         Define the cells as a pandas.DataFrame
 
         Inputs:
-            :df: (pandas.DataFrame) Must have columns defined ``['x','y','phenotype_label']`` the index must be unique
+            :df: (pandas.DataFrame) Must have columns defined ``['cell_index','x','y','phenotype_label']`` the index must be unique
             :groupby: (list) List of fields that will group the pandas.DataFrame by image frame
         """
         if self.mode not in ['w','r+','a']: raise ValueError("Cannot set data in read-only")
         if not df.index.is_unique: raise ValueError("Cells must have a unique index")
         self.groupby = groupby
-        required = ['x','y','phenotype_label']
+        required = ['cell_index','x','y','phenotype_label']
         for r in required: 
             if r not in df.columns: raise ValuError("Cell dataframe input needs at least "+str(required))
         df = pd.DataFrame(df.loc[:,required+groupby].dropna(subset=['phenotype_label']))
