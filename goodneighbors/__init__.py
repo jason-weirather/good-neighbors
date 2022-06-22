@@ -242,6 +242,9 @@ class GoodNeighbors(object):
             ids = pd.DataFrame({'db_id':one.index.tolist()})
             ids['_key'] = 1
             cnts = ids.merge(phenotypes,on='_key').drop(columns=['_key']).merge(cnts,on=['db_id','phenotype_label'],how='left').fillna(0)
+            if 'index' not in cnts.columns:
+                # If there's only a few rows, sometimes the 'index' column is named 'n_db_id' from the reset_index()
+                cnts = cnts.rename(columns={"n_db_id": "index"})
             cnts['index'] = cnts['index'].astype(int)
             cnts = cnts.pivot(columns='phenotype_label',index='db_id',values='index')
 
