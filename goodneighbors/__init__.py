@@ -189,7 +189,7 @@ class GoodNeighbors(object):
     #    #fracs['radius'] = radius_pixels
     #    return 
 
-    def calculate_neighbor_counts(self,radius,units='microns', include_self=True):
+    def calculate_neighbor_counts(self,radius,units='microns', include_self=True, return_neighbor_lists=False):
         """
         count the neighbors at the radius
         """
@@ -227,6 +227,11 @@ class GoodNeighbors(object):
             s = one.apply(lambda x: 
                 dist.columns[dist.loc[x.name]<radius].tolist()
             ,1)
+
+            # if return_neighbor_list is True, we need to store this variable now
+            if return_neighbor_lists==True:
+                neighbors_df = s
+
             s = pd.DataFrame(s).apply(lambda x: pd.Series(*x),1).stack().reset_index().\
                 drop(columns='level_1').\
                 rename(columns={'level_0':'db_id',0:'n_db_id'}).dropna()
@@ -267,6 +272,9 @@ class GoodNeighbors(object):
             #    fillna(0).astype(int).copy()
             collect.append(cnts)
         self.counts = pd.concat(collect)
+        # if return_neighbor_list is True, we need to return it. 
+        if return_neighbor_lists==True:
+            return neighbors_df
         return #self._counts
 
     def get_counts_per_radius(self,min_radius=0,max_radius=150,step_radius=2):
