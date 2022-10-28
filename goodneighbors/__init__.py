@@ -210,6 +210,7 @@ class GoodNeighbors(object):
         total = total.merge(phenotypes,on='_key')
         ## Execute distance measure on a per-image basis
         images = full[self.groupby].drop_duplicates().copy()
+        neighbors_df_list = []
         collect = []
         for i,r in images.iterrows():
             idf = pd.DataFrame(r).T
@@ -230,7 +231,7 @@ class GoodNeighbors(object):
 
             # if return_neighbor_list is True, we need to store this variable now
             if return_neighbor_lists==True:
-                neighbors_df = s
+                neighbors_df_list.append(s)
 
             s = pd.DataFrame(s).apply(lambda x: pd.Series(*x),1).stack().reset_index().\
                 drop(columns='level_1').\
@@ -274,6 +275,7 @@ class GoodNeighbors(object):
         self.counts = pd.concat(collect)
         # if return_neighbor_list is True, we need to return it. 
         if return_neighbor_lists==True:
+            neighbors_df = pd.concat(neighbors_df_list)
             return neighbors_df
         return #self._counts
 
