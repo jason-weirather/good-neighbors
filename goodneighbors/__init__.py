@@ -189,7 +189,7 @@ class GoodNeighbors(object):
     #    #fracs['radius'] = radius_pixels
     #    return 
 
-    def calculate_neighbor_counts(self,radius,units='microns', include_self=True, return_neighbor_lists=False):
+    def calculate_neighbor_counts(self,radius,units='microns', include_self=True, return_neighbor_lists=False, knn=0):
         """
         count the neighbors at the radius
         """
@@ -224,10 +224,28 @@ class GoodNeighbors(object):
             dist = cdist(coords,coords)
             dist = pd.DataFrame(dist,columns=one.index,index=one.index)
 
-            # get the distances we are interested in
-            s = one.apply(lambda x: 
-                dist.columns[dist.loc[x.name]<radius].tolist()
-            ,1)
+            # If knn == 0 (default), just filter the neighbors by the distance radius. 
+            if knn == 0: 
+                # get the distances we are interested in
+                s = one.apply(lambda x: 
+                    dist.columns[dist.loc[x.name]<radius].tolist()
+                ,1)
+            # if knn > 0, we want to take the k nearest neighbors instead of filtering by radius. 
+            elif knn > 0:
+                # if the number of cells is less than knn, just use the number of cells
+                knn_temp = knn
+                if len(dist.columns.tolist()) < knn+1:
+                    knn = len(dist.columns.tolist()) - 1
+                
+                # use np.partition to separate the distances into smaller and larger than knn'th + 1 distance. 
+                # then take all distances less than the knn'th + 1 distance. 
+                # Note: this will include knn nearest neighbors plus self, but self will be excluded if include_self == False. 
+                s = one.apply(lambda x:
+                    dist.columns[dist.loc[x.name] < np.partition(dist.loc[x.name], knn+1)[knn+1]].tolist()
+                ,1)
+                # reset knn
+                knn = knn_temp
+
 
             # if return_neighbor_list is True, we need to store this variable now
             if return_neighbor_lists==True:
