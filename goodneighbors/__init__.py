@@ -225,7 +225,7 @@ class GoodNeighbors(object):
             dist = pd.DataFrame(dist,columns=one.index,index=one.index)
 
             # If knn == 0 (default), just filter the neighbors by the distance radius. 
-            if knn == 0: 
+            if knn <= 0: 
                 # get the distances we are interested in
                 s = one.apply(lambda x: 
                     dist.columns[dist.loc[x.name]<radius].tolist()
@@ -241,7 +241,7 @@ class GoodNeighbors(object):
                 # then take all distances less than the knn'th + 1 distance. 
                 # Note: this will include knn nearest neighbors plus self, but self will be excluded if include_self == False. 
                 s = one.apply(lambda x:
-                    dist.columns[dist.loc[x.name] < np.partition(dist.loc[x.name], knn+1)[knn+1]].tolist()
+                    dist.columns[dist.loc[x.name] <= np.partition(dist.loc[x.name], knn)[knn]].tolist()
                 ,1)
                 # reset knn
                 knn = knn_temp
